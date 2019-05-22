@@ -354,6 +354,59 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
 
     /**
+     * 根据视频编号多线程爬取视频，并保存到数据库
+     *
+     * @param no 视频编号
+     */
+    @Override
+    @Async
+    @Transactional(rollbackFor = Exception.class)
+    public void crawByY(Integer type, Integer no) {
+        try {
+            String baseUrl = "http://888diao.com/";
+            String startUrl;
+            if(no ==1) {
+                 startUrl = baseUrl + "list/index"+ type + ".html";
+            } else{
+                startUrl = baseUrl + "list/index"+ type +"_" + no + ".html";
+            }
+            log.info("开始爬取：{}", startUrl);
+            //获取请求连接
+            Document document = Jsoup.connect(startUrl).timeout(JSOUP_CONNECTION_TIMEOUT).get();
+            //请求头设置，特别是cookie设置
+
+
+            Elements videoBox = document.select("div[class=video_box]");
+            for (Element element : videoBox) {
+                Elements aTag = element.select("a");
+                String href = "http://888diao.com/" + aTag.attr("href");
+                String cover = aTag.select("img").get(0).attr("src");
+                String name = aTag.select("img").get(0).attr("title");
+                String dateTimeTmp = element.select("div[class=box_left]").text();
+                Video video = new Video().setType(1000 + type).setName(name).setCover(cover).setUpdateTimeTmp(dateTimeTmp);
+                video.insert();
+                Document videoDocument = Jsoup.connect(href).get();
+                String url= ReUtil.getGroup0("\\['https[\\s\\S]*{1,}.m3u8",videoDocument.html()).substring(2);
+
+                RouteUrl routeUrl = new RouteUrl();
+
+                routeUrl.setVideoId(video.getId()).setUrl(url).setName(name);
+                routeUrlService.save(routeUrl);
+            }
+
+        } catch (Exception e) {
+            log.error("异常视频编号：{}", no);
+            log.error("出现异常：", e);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        new VideoServiceImpl().crawByY(1,1);
+
+    }
+
+    /**
      * 根据备注新增待完结视频
      *
      * @param remarks

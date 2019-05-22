@@ -61,6 +61,25 @@ public class VideoController {
     }
 
     /**
+     * 爬取视频，使用多线程爬取，线程配置见
+     *
+     * @return
+     * @see com.duan.video.config.ThreadPoolConfig
+     * <p>
+     * 从开始编号到截止编号
+     * 开始编号必须
+     * 截止编号默认为开始编号+1
+     */
+    @GetMapping("begin/{beginNo}/type/{type}")
+    public String starty(@PathVariable("beginNo") Integer beginNo, @PathVariable("type") Integer type) {
+
+        for (int i = beginNo; i <500; i++) {
+            videoService.crawByY(type, i);
+        }
+        return "爬取视频，从：" + beginNo + "type：" + type;
+    }
+
+    /**
      * 分页查询视频-简单信息
      *
      * @return

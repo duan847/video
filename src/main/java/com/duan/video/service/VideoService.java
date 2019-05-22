@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.duan.video.common.Query;
 import com.duan.video.pojo.entity.Video;
 import com.duan.video.pojo.vo.VideoDetailVO;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,6 +78,10 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     VideoDetailVO getDetailById(Long id);
+
+    @Async
+    @Transactional(rollbackFor = Exception.class)
+    void crawByY(Integer type, Integer no);
 
     void startByDoubanId(Integer id);
 
