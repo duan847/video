@@ -79,8 +79,8 @@
 //    }
 //
 //    @Test
-//    public void startByDoubanId() {
-//        videoService.startByDoubanId(1);
+//    public void getByDoubanId() {
+//        videoService.getByDoubanId(1);
 //    }
 //
 //    @Test

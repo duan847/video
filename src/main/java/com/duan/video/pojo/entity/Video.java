@@ -145,6 +145,11 @@ public class Video extends Model<Video> {
     @ApiModelProperty("简介")
     private String synopsis;
 
+    /**
+     * 豆瓣同步时间
+     */
+    private Date doubanSyncTime;
+
     @Override
     protected Serializable pkVal() {
         return id;

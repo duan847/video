@@ -3,6 +3,7 @@ package com.duan.video.service.impl;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -391,12 +392,15 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     }
 
+    /**
+     * 根据豆瓣id获取视频信息
+     * @param doubanId
+     * @return
+     */
     @Override
-    public void startByDoubanId(Integer id) {
-        String startUrl = "http://api.douban.com/v2/movie/subject/" + id + "?apikey=0b2bdeda43b5688921839c8ecb20399b&city=%E5%8C%97%E4%BA%AC&client=&udid=";
-
-        String forObject = restTemplate.getForObject(startUrl, String.class);
-        System.out.println(forObject);
+    public JSONObject getByDoubanId(String doubanId) {
+        String startUrl = "http://api.douban.com/v2/movie/subject/" + doubanId + "?apikey=0b2bdeda43b5688921839c8ecb20399b";
+        return restTemplate.getForObject(startUrl, JSONObject.class);
     }
 
     /**

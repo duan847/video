@@ -1,5 +1,6 @@
 package com.duan.video.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.duan.video.common.Query;
@@ -75,7 +76,12 @@ public interface VideoService extends IService<Video> {
      */
     VideoDetailVO getDetailById(Long id);
 
-    void startByDoubanId(Integer id);
+    /**
+     * 根据豆瓣id获取视频信息
+     * @param doubanId
+     * @return
+     */
+    JSONObject getByDoubanId(String doubanId);
 
     /**
      * 根据id更新视频所有信息

@@ -1,5 +1,6 @@
 package com.duan.video.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,25 +79,23 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
         }
         log.info("{}，开始更新", typeName);
         Integer count = 100;
-        List<String> list = new ArrayList<>();
+        List<Map<String,Object>> list = new ArrayList<>();
 
         do{
             Integer start = (page - 1) * count;
             //获取请求连接
             Document document = null;
+            String newUrl = url + "?start=" + start + "&count=" + count + "&apikey=0df993c66c0c636e29ecbb5344252a4a";
             try {
-                document = Jsoup.connect(url + "?start=" + start + "&count=" + count + "&apikey=0df993c66c0c636e29ecbb5344252a4a").ignoreContentType(true)
-                        .ignoreHttpErrors(true)
-                        .timeout(1000 * 30)
-                        .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36")
-                        .header("accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
-                        .header("accept-encoding","gzip, deflate, br")
-                        .header("accept-language","zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7")
-                        .get();
+                document = Jsoup.parse(new URL(newUrl).openStream(), "UTF-8", newUrl);
             } catch (IOException e) {
                 log.error("{}更新失败",typeName);
             }
 
+            if(null == document) {
+                flag = false;
+                break;
+            }
             JSONObject jsonObject = JSONObject.parseObject(document.text());
             JSONArray jsonArray = jsonObject.getJSONArray("subjects");
             if(jsonArray.size() == 0){
@@ -103,17 +103,35 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
             }
             jsonArray.forEach(item -> {
                 Map map = (Map)item;
-                list.add(map.get("title").toString());
+                list.add(map);
             });
             page += 1;
         }while (flag);
 
         List<VideoSort> videoSortList = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            List<Video> list1 = videoService.list(new QueryWrapper<Video>().lambda().eq(Video::getName, list.get(i)));
+            Map<String, Object> stringObjectMap = list.get(i);
+            if(null ==stringObjectMap) {
+                continue;
+            }
+            List<Video> list1 = videoService.list(new QueryWrapper<Video>().lambda().eq(Video::getName, stringObjectMap.get("title").toString()));
 
             if(list1.size() > 0) {
                 Video video = list1.get(0);
+
+                //如果没有同步过豆瓣的视频信息，同步豆瓣的评分、简介。并更新
+                if(null == video.getDoubanSyncTime()){
+                    String doubanId = stringObjectMap.get("id").toString();
+                    JSONObject doubanVideoDetail = videoService.getByDoubanId(doubanId);
+                    if(null == doubanVideoDetail) {
+                        log.error("同步豆瓣视频信息，但是没有找到，豆瓣id：{}", doubanId);
+                        continue;
+                    }
+                    Video videoNew = new Video();
+                    videoNew.setId(video.getId()).setScore(doubanVideoDetail.getJSONObject("rating").getBigDecimal("average")).setDoubanSyncTime(DateUtil.date()).setSynopsis(doubanVideoDetail.getString("summary"));
+                    videoNew.updateById();
+                    log.info("同步豆瓣信息成功，视频名：{}", stringObjectMap.get("title"));
+                }
                 videoSortList.add(new VideoSort().setSort(i).setType(type).setVideoId(video.getId()));
             }
         }
