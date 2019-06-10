@@ -59,6 +59,8 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Autowired
     private RouteUrlService routeUrlService;
+    @Autowired
+    private DownUrlService downUrlService;
 
     @Autowired
     private CrawErrorService crawErrorService;
@@ -315,10 +317,12 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             personService.saveBatch(staringList);
 
             Element boxs = document.select("div[class*=fed-drop-tops]").get(0);
+            Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
             Elements lines = boxs.select("ul[class=fed-part-rows] li");
             Elements dizhi = document.select("div[class=fed-drop-boxs fed-drop-btms fed-matp-v] div");
 
             List<RouteUrl> routeUrlList = new ArrayList<>();
+            List<DownUrl> downUrlList = new ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
 
 
@@ -338,6 +342,22 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                     RouteUrl routeUrl = new RouteUrl();
                     routeUrl.setLine(lineId).setName(element.select("a").html()).setUrl(url.attr("data-play")).setVideoId(newVideoId);
                     routeUrlList.add(routeUrl);
+                }
+            }
+            //视频下载地址
+            if (null != downElements) {
+                String downHref = downElements.get(0).attr("href");
+                Document downDocument = Jsoup.connect(BASE_URL + downHref).get();
+                Elements elements = downDocument.select("div[class*=fed-down-item] ul[class=fed-part-rows] li");
+                for (Element element : elements) {
+                    element.select("a").attr("href");
+                    //新增视频不同线路的url
+                    DownUrl downUrl = new DownUrl();
+                    downUrl.setName(element.select("a").html()).setUrl(element.select("a").attr("href")).setVideoId(newVideoId);
+                    downUrlList.add(downUrl);
+                }
+                if (downUrlList.size() > 0) {
+                    downUrlService.saveBatch(downUrlList);
                 }
             }
 
@@ -364,7 +384,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         if (null != remarks) {
             Integer haveCount = 0;
             Integer sumCount = 0;
-            if (StrUtil.containsAny(remarks, "更新", "TC", "TS", "HC", "连载","上映")) {
+            if (StrUtil.containsAny(remarks, "更新", "TC", "TS", "HC", "连载", "上映")) {
                 List<String> resultFindAll = ReUtil.findAll("\\d{1,3}", remarks, 0, new ArrayList<String>());
 
                 int size = resultFindAll.size();
@@ -394,6 +414,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     /**
      * 根据豆瓣id获取视频信息
+     *
      * @param doubanId
      * @return
      */
@@ -435,6 +456,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         routeUrlService.deleteByVideoId(id);
         personService.deleteByVideoId(id);
         incompletionService.deleteByVideoId(id);
+        downUrlService.deleteByVideoId(id);
 
         return true;
     }
