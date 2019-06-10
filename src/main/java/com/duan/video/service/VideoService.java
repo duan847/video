@@ -7,6 +7,8 @@ import com.duan.video.common.Query;
 import com.duan.video.pojo.entity.Incompletion;
 import com.duan.video.pojo.entity.Video;
 import com.duan.video.pojo.vo.VideoDetailVO;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -75,6 +77,10 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     VideoDetailVO getDetailById(Long id);
+
+    @Async
+    @Transactional(rollbackFor = Exception.class)
+    void crawDownUrlByVideo(Video video);
 
     /**
      * 根据豆瓣id获取视频信息

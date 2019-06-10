@@ -371,6 +371,51 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         }
     }
 
+    /**
+     * 根据视频编号多线程爬取视频下载地址，并保存到数据库
+     *
+     * @param video 视频编号
+     */
+    @Override
+    @Async
+    @Transactional(rollbackFor = Exception.class)
+    public void crawDownUrlByVideo(Video video) {
+        try {
+            String startUrl = BASE_URL + "detail/" + video.getNo() + ".html";
+            //获取请求连接
+            Document document = Jsoup.connect(startUrl).timeout(JSOUP_CONNECTION_TIMEOUT).get();
+            //请求头设置，特别是cookie设置
+            log.info("开始爬取：{}下载地址", startUrl);
+            Elements detail = document.select("dl[class=fed-deta-info fed-margin fed-part-rows fed-part-over]");
+            if (null == detail || detail.html().trim().equals("")) {
+                crawErrorService.save(new CrawError().setContent("无资源").setCreateTime(new Date()).setVideoNo(video.getNo()));
+                return;
+            }
+
+            Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
+            List<DownUrl> downUrlList = new ArrayList<>();
+            //视频下载地址
+            if (null != downElements) {
+                String downHref = downElements.get(0).attr("href");
+                Document downDocument = Jsoup.connect(BASE_URL + downHref).get();
+                Elements elements = downDocument.select("div[class*=fed-down-item] ul[class=fed-part-rows] li");
+                for (Element element : elements) {
+                    element.select("a").attr("href");
+                    //新增视频不同线路的url
+                    DownUrl downUrl = new DownUrl();
+                    downUrl.setName(element.select("a").html()).setUrl(element.select("a").attr("href")).setVideoId(video.getId());
+                    downUrlList.add(downUrl);
+                }
+                if (downUrlList.size() > 0) {
+                    downUrlService.deleteByVideoId(video.getId());
+                    downUrlService.saveBatch(downUrlList);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("出现异常：", e);
+        }
+    }
 
     /**
      * 根据备注新增待完结视频

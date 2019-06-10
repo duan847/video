@@ -11,13 +11,7 @@
 
     <!--分页查询视频-简单信息-->
     <select id="selectSimplePage" resultType="com.duan.video.pojo.entity.Video">
-        select id,name,cover,score,remarks,film_length from video
-        <trim prefix="where" prefixOverrides="AND">
-            <if test="params.name != null and '' != params.name">
-                <bind name="name_like" value="'%' + params.name + '%'" />
-                AND name like #{name_like} and type &lt; 1000
-            </if>
-        </trim>
+        select id,no from video
     </select>
 
     <!--分页查询视频-详细信息-->

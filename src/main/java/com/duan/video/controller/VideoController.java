@@ -64,6 +64,33 @@ public class VideoController {
     }
 
     /**
+     * 爬取视频，使用多线程爬取，线程配置见
+     *
+     * @return
+     * @see com.duan.video.config.ThreadPoolConfig
+     * <p>
+     * 从开始编号到截止编号
+     * 开始编号必须
+     * 截止编号默认为开始编号+1
+     */
+    @GetMapping("url/current/{current}/size/{size}")
+    public void startDownUrl(@PathVariable Long current, @PathVariable Long size) {
+        do {
+            log.info("开始更新视频下载地址：从：{}开始，每页：{}条", current, size);
+            IPage<Video> page = videoService.selectSimplePage(new Query(current, size));
+            List<Video> videoList = page.getRecords();
+            if (videoList.size() == 0) {
+                log.info(Constants.UPDATE_INCOMPLETION_END_MSG);
+                break;
+            }
+            current += 1L;
+            videoList.forEach(item->{
+                videoService.crawDownUrlByVideo(item);
+            });
+        }while (true);
+    }
+
+    /**
      * 分页查询视频-简单信息
      *
      * @return
