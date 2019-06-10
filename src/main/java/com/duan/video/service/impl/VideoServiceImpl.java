@@ -364,7 +364,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         if (null != remarks) {
             Integer haveCount = 0;
             Integer sumCount = 0;
-            if (StrUtil.containsAny(remarks, "更新", "TC", "TS", "HC", "连载")) {
+            if (StrUtil.containsAny(remarks, "更新", "TC", "TS", "HC", "连载","上映")) {
                 List<String> resultFindAll = ReUtil.findAll("\\d{1,3}", remarks, 0, new ArrayList<String>());
 
                 int size = resultFindAll.size();
