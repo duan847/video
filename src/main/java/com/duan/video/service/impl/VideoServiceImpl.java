@@ -345,7 +345,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                 }
             }
             //视频下载地址
-            if (null != downElements) {
+            if (null != downElements && downElements.size() > 0) {
                 String downHref = downElements.get(0).attr("href");
                 Document downDocument = Jsoup.connect(BASE_URL + downHref).get();
                 Elements elements = downDocument.select("div[class*=fed-down-item] ul[class=fed-part-rows] li");

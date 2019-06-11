@@ -34,6 +34,8 @@ public class VideoController {
     @Autowired
     private RouteUrlService routeUrlService;
     @Autowired
+    private DownUrlService downUrlService;
+    @Autowired
     private DictService dictService;
     @Autowired
     private VideoSortService videoSortService;
@@ -144,6 +146,17 @@ public class VideoController {
     @GetMapping("/{id}/url/page")
     public IPage<RouteUrl> selectUrlPage(Page page, @PathVariable Long id) {
         return routeUrlService.selectByVideoIdPage(page, id);
+    }
+
+    /**
+     * 根据id分页查询视频下载地址
+     *
+     * @return
+     */
+    @ApiOperation("根据id分页查询视频下载地址")
+    @GetMapping("/{id}/down/page")
+    public IPage<DownUrl> selectDownUrlPage(Page page, @PathVariable Long id) {
+        return downUrlService.selectByVideoIdPage(page, id);
     }
 
     /**
