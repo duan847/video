@@ -22,10 +22,10 @@ public interface RouteUrlService extends IService<RouteUrl> {
 
 
     /**
-     * 更新所有视频时长
+     * 更新没有时长的视频的时长
      * @return
      */
-    Boolean updateAllFilmLength(Integer current, Integer size);
+    Boolean updateFilmLength(Integer current, Integer size);
 
     /**
      * 根据视频id删除视频播放地址

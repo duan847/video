@@ -5,7 +5,6 @@ import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.duan.video.common.Constants;
@@ -74,62 +73,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         return response.getList();
     }
 
-    public String getDetailById(String id) {
-//        try {
-//            Document document = Jsoup.connect("http://www.kuqiyy.com/detail/" + id+".html").get();
-//            Elements detail = document.select("dl[class=fed-deta-info fed-margin fed-part-rows fed-part-over]");
-//            String fengmian = detail.select("dt a").attr("data-original");
-//            String pingfen = detail.select("dt span").get(1).text();
-//            String remarks = detail.select("dt span").get(2).text();
-//            Elements zhuyan = detail.select("dd ul li");
-//            log.info("fengmian：{}", fengmian);
-//            log.info("pingfen：{}", pingfen);
-//            log.info("remarks：{}", remarks);
-//            //电影介绍
-//            for (Element element : zhuyan) {
-//                log.info("{}：{}", element.select("span").text(), element.select("a").text());
-//
-//            }
-//
-//            Element boxs = document.select("div[class*=fed-drop-tops]").get(0);
-//            Elements xianlu = boxs.select("ul[class=fed-part-rows] li");
-//            Elements dizhi= document.select("div[class=fed-drop-boxs fed-drop-btms fed-matp-v] div");
-//            for (int i = 0; i < xianlu.size(); i++) {
-//
-//                String href = xianlu.get(i).select("a").attr("href");
-//                log.info("线路名：{}，地址：{}", xianlu.get(i).select("a").text(), href);
-//
-//                for (Element element : dizhi.get(i).select("li[class=fed-padding fed-col-xs3 fed-col-md2 fed-col-lg1]")) {
-//                    log.info("名称：{}，地址：{}", element.select("a").html(), element.select("a").attr("href"));
-//
-//                     Document videoDocument = Jsoup.connect("http://www.kuqiyy.com/play/" + element.select("a").attr("href")).get();
-//                    Elements url = videoDocument.select("iframe[data-play]");
-//
-//                    return url.attr("data-play");
-//                }
-//            }
-//
-//            return null;
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return null;
-    }
-
-    @Override
-    public String selectVideoUrlById(String id) {
-        try {
-            Document document = Jsoup.connect("http://www.kuqiyy.com/play/" + id + "-1-1.html").get();
-            Elements url = document.select("iframe[data-play]");
-            return url.attr("data-play");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        return null;
-    }
-
     /**
      * 开始爬取
      *
@@ -156,39 +99,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             crawByNo(j, null);
         }
         return "从：" + startNo + "开始";
-    }
-
-    /**
-     * 开始爬取
-     *
-     * @return
-     */
-    @Override
-    @Transactional
-    public String start(Integer[] startNo) {
-        for (int j = 0; j < startNo.length; j++) {
-            crawByNo(startNo[j], null);
-        }
-        return "从：" + startNo + "开始";
-    }
-
-    /**
-     * 根据no更新视频
-     *
-     * @param no
-     * @return
-     */
-    @Override
-    public boolean updateByNo(Integer no) {
-        QueryWrapper<Video> noWrapper = new QueryWrapper<Video>().eq("no", no);
-        Video video = videoMapper.selectOne(noWrapper);
-        if (null != video) {
-            videoMapper.delete(noWrapper);
-            videoRouteService.deleteByVideoId(video.getId());
-            start(new Integer[no]);
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -368,52 +278,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             log.error("异常视频编号：{}", no);
             log.error("出现异常：", e);
             crawErrorService.save(new CrawError().setContent(e.toString()).setCreateTime(new Date()).setVideoNo(no));
-        }
-    }
-
-    /**
-     * 根据视频编号多线程爬取视频下载地址，并保存到数据库
-     *
-     * @param video 视频编号
-     */
-    @Override
-    @Async
-    @Transactional(rollbackFor = Exception.class)
-    public void crawDownUrlByVideo(Video video) {
-        try {
-            String startUrl = BASE_URL + "detail/" + video.getNo() + ".html";
-            //获取请求连接
-            Document document = Jsoup.connect(startUrl).timeout(JSOUP_CONNECTION_TIMEOUT).get();
-            //请求头设置，特别是cookie设置
-            log.info("开始爬取：{}下载地址", startUrl);
-            Elements detail = document.select("dl[class=fed-deta-info fed-margin fed-part-rows fed-part-over]");
-            if (null == detail || detail.html().trim().equals("")) {
-                crawErrorService.save(new CrawError().setContent("无资源").setCreateTime(new Date()).setVideoNo(video.getNo()));
-                return;
-            }
-
-            Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
-            List<DownUrl> downUrlList = new ArrayList<>();
-            //视频下载地址
-            if (null != downElements) {
-                String downHref = downElements.get(0).attr("href");
-                Document downDocument = Jsoup.connect(BASE_URL + downHref).get();
-                Elements elements = downDocument.select("div[class*=fed-down-item] ul[class=fed-part-rows] li");
-                for (Element element : elements) {
-                    element.select("a").attr("href");
-                    //新增视频不同线路的url
-                    DownUrl downUrl = new DownUrl();
-                    downUrl.setName(element.select("a").html()).setUrl(element.select("a").attr("href")).setVideoId(video.getId());
-                    downUrlList.add(downUrl);
-                }
-                if (downUrlList.size() > 0) {
-                    downUrlService.deleteByVideoId(video.getId());
-                    downUrlService.saveBatch(downUrlList);
-                }
-            }
-
-        } catch (Exception e) {
-            log.error("出现异常：", e);
         }
     }
 

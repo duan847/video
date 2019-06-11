@@ -21,8 +21,6 @@ public interface VideoService extends IService<Video> {
 
     List<Video> searchByName(String name);
 
-    String selectVideoUrlById(String id);
-
     /**
      * 开始爬取
      *
@@ -30,23 +28,13 @@ public interface VideoService extends IService<Video> {
      */
     String start(Integer startNo, Integer endNo);
 
-    String start(Integer[] startNo);
-
-
     /**
-     * 根据视频编号多线程爬取视频，并保存到数据库
      *
+     * 根据视频编号多线程爬取视频，并保存到数据库
      * @param no 视频编号
+     * @param videoId
      */
     void crawByNo(Integer no,Long videoId);
-
-    /**
-     * 根据no更新视频
-     *
-     * @param no
-     * @return
-     */
-    boolean updateByNo(Integer no);
 
     /**
      * 分页查询视频-简单信息
@@ -77,10 +65,6 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     VideoDetailVO getDetailById(Long id);
-
-    @Async
-    @Transactional(rollbackFor = Exception.class)
-    void crawDownUrlByVideo(Video video);
 
     /**
      * 根据豆瓣id获取视频信息

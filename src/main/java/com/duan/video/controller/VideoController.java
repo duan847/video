@@ -43,6 +43,7 @@ public class VideoController {
     private CrawErrorService crawErrorService;
     @Autowired
     private IncompletionService incompletionService;
+
     /**
      * 爬取视频，使用多线程爬取，线程配置见
      *
@@ -66,50 +67,23 @@ public class VideoController {
     }
 
     /**
-     * 爬取视频，使用多线程爬取，线程配置见
-     *
-     * @return
-     * @see com.duan.video.config.ThreadPoolConfig
-     * <p>
-     * 从开始编号到截止编号
-     * 开始编号必须
-     * 截止编号默认为开始编号+1
-     */
-    @GetMapping("url/current/{current}/size/{size}")
-    public void startDownUrl(@PathVariable Long current, @PathVariable Long size) {
-        do {
-            log.info("开始更新视频下载地址：从：{}开始，每页：{}条", current, size);
-            IPage<Video> page = videoService.selectSimplePage(new Query(current, size));
-            List<Video> videoList = page.getRecords();
-            if (videoList.size() == 0) {
-                log.info(Constants.UPDATE_INCOMPLETION_END_MSG);
-                break;
-            }
-            current += 1L;
-            videoList.forEach(item->{
-                videoService.crawDownUrlByVideo(item);
-            });
-        }while (true);
-    }
-
-    /**
      * 分页查询视频-简单信息
      *
      * @return
      */
     @GetMapping("/page")
-    @ApiOperation("分页查询视频-简单信息。在url后追加过滤参数，包括——电影名称（name）")
+    @ApiOperation("分页查询视频-简单信息。在url后追加过滤参数，可过滤的参数包括——电影名称（name）、类型（type）")
     public Page<Video> selectSimplePage(@RequestParam Map<String, Object> params) {
         return videoService.selectSimplePage(new Query(params));
     }
 
     /**
-     * 分页查询视频-简单信息
+     * 分页查询视频-详细信息
      *
      * @return
      */
     @GetMapping("/detail/page")
-    @ApiOperation("分页查询视频-详细信息。在url后追加过滤参数，包括——电影名称（name）")
+    @ApiOperation("分页查询视频-详细信息。在url后追加过滤参数，可过滤的参数包括——电影名称（name）、类型（type）")
     public Page<VideoDetailVO> selectDetailPage(@RequestParam Map<String, Object> params) {
         return videoService.selectDetailPage(new Query(params));
     }
@@ -183,109 +157,115 @@ public class VideoController {
 
     /**
      * 更新热映电影
-     * 定时：每天早上11点执行
+     *
      * @return
      */
     @ApiOperation("更新热映电影")
     @GetMapping("sort/hot")
-    public boolean updateHotSort(){
+    public boolean updateHotSort() {
         return videoSortService.updateByType(Constants.MOVIE_HOT, 1);
     }
 
     /**
      * 更新top250电影
-     * 定时：每天早上11点5分执行
+     *
      * @return
      */
     @ApiOperation("更新top250电影")
     @GetMapping("sort/top250")
-    public boolean updateTop250Sort(){
+    public boolean updateTop250Sort() {
         return videoSortService.updateByType(Constants.MOVIE_TOP250, 1);
     }
 
     /**
      * 更新top250电影
-     * 定时：每天早上11点5分执行
+     *
      * @return
      */
     @ApiOperation("更新top250电影")
     @GetMapping("sort/mvhot")
-    public boolean updateMVHotSort(){
+    public boolean updateMVHotSort() {
         return videoSortService.updateByType(Constants.MV_HOT, 1);
     }
 
     /**
      * 更新即将上映电影
+     *
      * @return
      */
     @ApiOperation("更新即将上映电影")
     @GetMapping("sort/coming")
-    public boolean updateComingSort(){
+    public boolean updateComingSort() {
         return videoSortService.updateByType(Constants.MOVIE_COMING, 1);
     }
 
     /**
      * 更新所有电影排序
-     *
+     * 定时：每天早上7点执行
      * @return
      */
     @ApiOperation("更新所有电影排序")
     @GetMapping("sort/all")
     @Scheduled(cron = "0 0 7 * * ?")
-    public boolean updateAllSort(){
+    public boolean updateAllSort() {
         return videoSortService.updateAllSort();
     }
 
     /**
      * 更新所有视频时长
+     *
      * @return
      */
     @ApiOperation("更新所有视频时长")
     @GetMapping("url/filmlength")
-    public boolean updateAllFilmLength(){
+    public boolean updateFilmLength() {
         long count = routeUrlService.count();
         Integer size = 100;
-        for (int i = 0; i < count; i+=size) {
-            routeUrlService.updateAllFilmLength(i, size);
+        for (int i = 0; i < count; i += size) {
+            routeUrlService.updateFilmLength(i, size);
         }
         return true;
     }
 
     /**
      * 根据id更新视频所有信息
+     *
      * @param id
      * @return
      */
     @ApiOperation("根据id更新视频所有信息")
     @PutMapping("{id}/allinfo")
-    public boolean updateAllInfoById(@PathVariable Long id){
+    public boolean updateAllInfoById(@PathVariable Long id) {
         return videoService.updateAllInfoById(id);
     }
 
     /**
      * 爬取最新视频
+     *
      * @return
      */
     @ApiOperation("爬取最新视频")
-    @GetMapping("now")
-    public boolean crawNow(){
+    @PostMapping("now")
+    public boolean crawNow() {
         return videoService.crawNow();
     }
 
     /**
-     * 更新待完结视频
+     * 更新待完结视频，多线程执行
+     * 定时：每小时执行一次
+     *
      * @return
      */
     @ApiOperation("更新待完结视频")
-    @GetMapping("incompletion")
+    @PutMapping("incompletion")
     @Scheduled(cron = "0 0 1/1 * * ?")
-    public boolean updateByIncompletion(){
+    public boolean updateByIncompletion() {
         Integer size = 30;
         Integer current = 0;
         int count = incompletionService.count(new QueryWrapper<Incompletion>().lambda().gt(Incompletion::getUpdateTime, DateUtil.lastMonth()));
         log.info(Constants.UPDATE_INCOMPLETION_START_MSG, count, DateUtil.now());
         do {
-            IPage<Incompletion> page = incompletionService.page(new Page<>(current, size),  new QueryWrapper<Incompletion>().lambda().gt(Incompletion::getUpdateTime, DateUtil.lastMonth()));
+            IPage<Incompletion> page = incompletionService.page(new Page<>(current, size), new QueryWrapper<Incompletion>().lambda().gt(Incompletion::getUpdateTime, DateUtil.lastMonth()));
             List<Incompletion> incompletionList = page.getRecords();
             if (incompletionList.size() == 0) {
                 log.info(Constants.UPDATE_INCOMPLETION_END_MSG);
@@ -293,12 +273,13 @@ public class VideoController {
             }
             current += 1;
             videoService.updateByIncompletionList(incompletionList);
-        }while (true);
+        } while (true);
         return true;
     }
 
     /**
      * 根据爬取异常的内容重新爬取视频
+     *
      * @param content
      * @return
      */
@@ -306,8 +287,8 @@ public class VideoController {
     @GetMapping("error/content/{content}")
     public boolean updateByCrawError(@PathVariable String content) {
         List<CrawError> crawErrorList = crawErrorService.list(new QueryWrapper<CrawError>().lambda().eq(CrawError::getContent, content));
-        crawErrorList.forEach( item -> {
-            videoService.crawByNo(item.getVideoNo(),null);
+        crawErrorList.forEach(item -> {
+            videoService.crawByNo(item.getVideoNo(), null);
             crawErrorService.removeById(item.getId());
         });
         return true;

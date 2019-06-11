@@ -48,13 +48,13 @@ public class RouteUrlServiceImpl extends ServiceImpl<RouteUrlMapper, RouteUrl> i
     }
 
     /**
-     * 更新所有视频时长
+     * 更新没有时长的视频的时长
      *
      * @return
      */
     @Override
     @Async
-    public Boolean updateAllFilmLength(Integer current, Integer size) {
+    public Boolean updateFilmLength(Integer current, Integer size) {
         List<RouteUrl> routeUrlList = new ArrayList<>();
         List<RouteUrl> list = super.list(new QueryWrapper<RouteUrl>().isNull("film_length").last("LIMIT " + current + "," + size));
 
