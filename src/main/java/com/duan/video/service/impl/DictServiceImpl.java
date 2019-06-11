@@ -14,6 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * 字典service实现
  *
@@ -35,6 +39,20 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
     @Override
     public IPage<Dict> selectTypePage(Page page) {
         return selectByPidPage(page, Constants.VIDEO_TYPE_PID);
+    }
+
+    /**
+     * 查询所有字典
+     * @return map，key为id，value为value
+     */
+    @Override
+    public Map selectMap() {
+        Map map = new HashMap();
+        List<Dict> dictList = dictMapper.selectList(null);
+        dictList.forEach(item -> {
+            map.put(item.getId(),item.getValue());
+        });
+        return map;
     }
 
     /**
