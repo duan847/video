@@ -41,6 +41,9 @@ public class RequestAop {
         try {
             // 接收到请求，记录请求内容
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (null == attributes) {
+                return proceed;
+            }
             HttpServletRequest request = attributes.getRequest();
             String url = request.getRequestURI();
             String method = request.getMethod();
