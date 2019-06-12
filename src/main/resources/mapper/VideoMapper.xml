@@ -58,4 +58,12 @@
         select v.id,v.name,v.cover,v.score,v.remarks,v.film_length,v.year,v.synopsis,v.area,v.update_time from video v,video_sort vs
         where v.id = vs.video_id and vs.type = #{params.type}
     </select>
+
+    <!--根据ids查询视频备注-->
+    <select id="selectRemarksByIds" resultType="com.duan.video.pojo.entity.Video">
+        select id, remarks, no from video where id in
+        <foreach collection="ids" open="(" close=")" item="t" separator=",">
+            #{t}
+        </foreach>
+    </select>
 </mapper>

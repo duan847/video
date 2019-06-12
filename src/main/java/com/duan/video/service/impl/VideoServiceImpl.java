@@ -420,7 +420,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             }
         });
         //待完结视频存在于视频中，则更新待完结视频
-        List<Video> videoList = videoMapper.selectBatchIds(videoIds);
+        List<Video> videoList = videoMapper.selectRemarksByIds(videoIds);
         if (videoList.size() == 0) {
             log.info(Constants.UPDATE_INCOMPLETION_END_MSG);
         } else {

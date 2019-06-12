@@ -4,6 +4,7 @@
 //import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 //import com.duan.video.VideoApplication;
 //import com.duan.video.common.Query;
+//import com.duan.video.mapper.VideoMapper;
 //import com.duan.video.pojo.entity.Video;
 //import com.duan.video.service.VideoService;
 //import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@
 //import org.springframework.test.context.junit4.SpringRunner;
 //
 //import java.io.IOException;
+//import java.util.Arrays;
 //import java.util.HashMap;
 //import java.util.List;
 //import java.util.Map;
@@ -32,36 +34,17 @@
 //    @Autowired
 //    private VideoService videoService;
 //
+//
+//    @Autowired
+//    private VideoMapper videoMapper;
 //    @Test
 //    public void searchByName() {
 //        log.info("视频地址：{}",videoService.searchByName("下一任"));
 //    }
 //
 //    @Test
-//    public void selectVideoUrlById() {
-//        log.info("视频地址：{}",videoService.selectVideoUrlById("76551"));
-//    }
-//
-//    @Test
 //    public void start() {
 //        videoService.start(80617,80617);
-//    }
-//
-//    @Test
-//    public void start1() {
-//        FileReader fileReader = new FileReader("error.log");
-//        List<String> result = fileReader.readLines();
-//        for (int i = 0; i < result.size(); i++) {
-//            if((result.get(i)).split("id：").length > 1) {
-//                videoService.start(new Integer[]{Integer.parseInt(result.get(i).split("id：")[1])});
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void start2(){
-//        //49564
-//        videoService.start(new Integer[]{79561});
 //    }
 //
 //    @Test
@@ -80,7 +63,7 @@
 //
 //    @Test
 //    public void getByDoubanId() {
-//        videoService.getByDoubanId(1);
+//        videoService.getByDoubanId("1");
 //    }
 //
 //    @Test
@@ -97,5 +80,10 @@
 //            videoService.deleteAllInfoById(item.getId());
 //
 //        });
+//    }
+//
+//    @Test
+//    public void selectRemarksByIds(){
+//        videoMapper.selectRemarksByIds(Arrays.asList(1L));
 //    }
 //}

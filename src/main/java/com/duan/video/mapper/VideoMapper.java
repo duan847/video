@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.duan.video.common.Query;
 import com.duan.video.pojo.entity.Video;
 import com.duan.video.pojo.vo.VideoDetailVO;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -43,4 +44,11 @@ public interface VideoMapper extends BaseMapper<Video> {
      * @return
      */
     List<VideoDetailVO> selectSortPage(Query query);
+
+    /**
+     * 根据ids查询视频备注
+     * @param ids
+     * @return
+     */
+    List<Video> selectRemarksByIds(@Param("ids") List<Long> ids);
 }
