@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 学生service接口
@@ -100,4 +101,10 @@ public interface VideoService extends IService<Video> {
      * @param incompletionList
      */
     void updateByIncompletionList(List<Incompletion> incompletionList);
+
+    /**
+     * 查询所有数量
+     * @return
+     */
+    Map getAllCount();
 }

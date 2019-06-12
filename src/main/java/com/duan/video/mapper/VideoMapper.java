@@ -6,6 +6,7 @@ import com.duan.video.pojo.entity.Video;
 import com.duan.video.pojo.vo.VideoDetailVO;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -51,4 +52,22 @@ public interface VideoMapper extends BaseMapper<Video> {
      * @return
      */
     List<Video> selectRemarksByIds(@Param("ids") List<Long> ids);
+
+
+    /**
+     * 查看某天到某天的新增视频数
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    Integer getAddCountByStartDayAdnEndDay(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
+    /**
+     * 查看某天到某天的新增视频数
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    Integer getUpdateCountByStartDayAdnEndDay(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
 }

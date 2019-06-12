@@ -293,4 +293,14 @@ public class VideoController {
         });
         return true;
     }
+
+    /**
+     * 查询所有数量
+     * @return
+     */
+    @ApiOperation("查询所有数量")
+    @GetMapping("count")
+    public Map getAllCount(){
+        return videoService.getAllCount();
+    }
 }

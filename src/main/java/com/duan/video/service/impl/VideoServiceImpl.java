@@ -28,9 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static com.duan.video.common.Constants.BASE_URL;
 import static com.duan.video.common.Constants.JSOUP_CONNECTION_TIMEOUT;
@@ -437,6 +435,19 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                 }
             });
         }
+    }
+
+    /**
+     * 查询所有数量
+     * @return
+     */
+    @Override
+    public Map getAllCount() {
+        Map map = new HashMap(2);
+        Date now = DateUtil.date();
+        map.put("toDayAddCount", videoMapper.getAddCountByStartDayAdnEndDay(now, now));
+        map.put("toDayUpdateCount", videoMapper.getUpdateCountByStartDayAdnEndDay(now, now));
+        return map;
     }
 
     /**

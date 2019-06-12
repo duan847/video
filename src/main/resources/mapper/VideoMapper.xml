@@ -66,4 +66,14 @@
             #{t}
         </foreach>
     </select>
+
+    <!--查看某天到某天的新增视频数-->
+    <select id="getAddCountByStartDayAdnEndDay" resultType="java.lang.Integer">
+        SELECT count(*) FROM video WHERE DATE(create_time) BETWEEN DATE(#{startDate}) AND DATE(#{endDate});
+    </select>
+
+    <!--查看某天到某天的更新视频数-->
+    <select id="getUpdateCountByStartDayAdnEndDay" resultType="java.lang.Integer">
+        SELECT count(*) FROM video WHERE DATE(update_time) BETWEEN DATE(#{startDate}) AND DATE(#{endDate});
+    </select>
 </mapper>
