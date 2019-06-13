@@ -12,6 +12,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -49,6 +50,10 @@ public class RequestAop {
             String method = request.getMethod();
             //获取GET请求参数
             String queryString = request.getQueryString();
+            if (null != queryString) {
+                //将中文转码
+                queryString = URLDecoder.decode(queryString,"utf-8");
+            }
             long timeDiff = Integer.parseInt(String.valueOf(DateUtil.between(startTime, endTime, DateUnit.MS)));
             RequestLog requestLog = new RequestLog();
             requestLog.setIp(IpUtil.getIpAddr(request)).setUrl(url).setHttpMethod(method).setClassName(joinPoint.getSignature().getDeclaringTypeName()).setMethod(joinPoint.getSignature().getName()).setParams(queryString).setStartTime(startTime).setEndTime(endTime).setTimeDiff(timeDiff);
