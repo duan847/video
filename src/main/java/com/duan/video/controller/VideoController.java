@@ -73,7 +73,7 @@ public class VideoController {
     @GetMapping("begin/{beginNo}/type/{type}")
     public String starty(@PathVariable("beginNo") Integer beginNo, @PathVariable("type") Integer type) {
 
-        for (int i = beginNo; i <500; i++) {
+        for (int i = beginNo; i <4479; i++) {
             videoService.crawByY(type, i);
         }
         return "爬取视频，从：" + beginNo + "type：" + type;

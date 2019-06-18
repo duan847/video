@@ -363,12 +363,12 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Transactional(rollbackFor = Exception.class)
     public void crawByY(Integer type, Integer no) {
         try {
-            String baseUrl = "http://888diao.com/";
+            String baseUrl = "http://www.sejidy.com/";
             String startUrl;
             if(no ==1) {
-                 startUrl = baseUrl + "list/index"+ type + ".html";
+                 startUrl = baseUrl + "tuqing/pro"+ type + ".html";
             } else{
-                startUrl = baseUrl + "list/index"+ type +"_" + no + ".html";
+                startUrl = baseUrl + "tuqing/pro"+ type +"_" + no + ".html";
             }
             log.info("开始爬取：{}", startUrl);
             //获取请求连接
@@ -376,18 +376,22 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             //请求头设置，特别是cookie设置
 
 
-            Elements videoBox = document.select("div[class=video_box]");
+            Elements videoBox = document.select("div[class=post]");
             for (Element element : videoBox) {
                 Elements aTag = element.select("a");
-                String href = "http://888diao.com/" + aTag.attr("href");
+                String href = baseUrl + "ckpro/" +aTag.attr("href").replace("/yali/file","");
                 String cover = aTag.select("img").get(0).attr("src");
-                String name = aTag.select("img").get(0).attr("title");
-                String dateTimeTmp = element.select("div[class=box_left]").text();
-                Video video = new Video().setType(1000 + type).setName(name).setCover(cover).setUpdateTimeTmp(dateTimeTmp);
+                String name = aTag.attr("title");
+                String dateTimeTmp = aTag.text();
+                Video video = new Video().setType(687 + type).setName(name).setCover(cover).setUpdateTimeTmp(dateTimeTmp);
                 video.insert();
                 Document videoDocument = Jsoup.connect(href).get();
-                String url= ReUtil.getGroup0("\\['https[\\s\\S]*{1,}.m3u8",videoDocument.html()).substring(2);
 
+
+                String script = videoDocument.select("div[class=player]").get(0).getElementsByTag("script").get(0).attr("src");
+                Document documentScirpt = Jsoup.connect(baseUrl + script).ignoreContentType(true).get();
+
+                String url= ReUtil.getGroup0("https[\\s\\S]*{1,}.m3u8",documentScirpt.html());
                 RouteUrl routeUrl = new RouteUrl();
 
                 routeUrl.setVideoId(video.getId()).setUrl(url).setName(name);
