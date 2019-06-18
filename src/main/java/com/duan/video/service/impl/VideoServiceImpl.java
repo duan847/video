@@ -423,18 +423,30 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             log.info(Constants.UPDATE_INCOMPLETION_END_MSG);
         } else {
             videoList.forEach(video -> {
-                String thisVideoRemarks = video.getRemarks();
-                Integer no = video.getNo();
-                String newRemarks = getRemarksByNo(no);
-                //如果现在视频的remarks和获取到的remarks不一样，更新视频
-                if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
-                    Long videoId = video.getId();
-                    incompletionService.deleteByVideoId(videoId);
-                    this.updateAllInfoById(videoId);
-                    log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
-                }
+                updateUrlByVideo(video);
             });
         }
+    }
+
+    /**
+     * 根据视频信息更新视频播放地址
+     * @param video
+     * @return
+     */
+    @Override
+    public boolean updateUrlByVideo(Video video){
+        String thisVideoRemarks = video.getRemarks();
+        Integer no = video.getNo();
+        String newRemarks = getRemarksByNo(no);
+        //如果现在视频的remarks和获取到的remarks不一样，更新视频
+        if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
+            Long videoId = video.getId();
+            incompletionService.deleteByVideoId(videoId);
+            this.updateAllInfoById(videoId);
+            log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -477,6 +489,16 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             crawErrorService.save(new CrawError().setContent(e.toString()).setCreateTime(new Date()).setVideoNo(no));
         }
         return remarks;
+    }
+
+    /**
+     * 根据ids查询视频备注
+     * @param videoIds
+     * @return
+     */
+    @Override
+    public List<Video> selectRemarksByIds(List<Long> videoIds){
+        return videoMapper.selectRemarksByIds(videoIds);
     }
 
 }

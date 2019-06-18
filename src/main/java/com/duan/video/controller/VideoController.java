@@ -1,6 +1,7 @@
 package com.duan.video.controller;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.ArrayUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -302,5 +304,19 @@ public class VideoController {
     @GetMapping("count")
     public Map getAllCount(){
         return videoService.getAllCount();
+    }
+
+    /**
+     * 根据视频id更新视频播放地址
+     * @param id
+     * @return
+     */
+    @PutMapping("/{id}/url")
+    public boolean updateUrlById(@PathVariable Long id){
+        List<Video> videoList = videoService.selectRemarksByIds(Arrays.asList(id));
+        if(videoList.size() == 0) {
+            return false;
+        }
+        return videoService.updateUrlByVideo(videoList.get(0));
     }
 }

@@ -103,8 +103,22 @@ public interface VideoService extends IService<Video> {
     void updateByIncompletionList(List<Incompletion> incompletionList);
 
     /**
+     * 根据视频信息更新视频播放地址
+     * @param video
+     * @return
+     */
+    boolean updateUrlByVideo(Video video);
+
+    /**
      * 查询所有数量
      * @return
      */
     Map getAllCount();
+
+    /**
+     * 根据ids查询视频备注
+     * @param videoIds
+     * @return
+     */
+    List<Video> selectRemarksByIds(List<Long> videoIds);
 }
