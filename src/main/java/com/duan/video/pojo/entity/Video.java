@@ -150,6 +150,10 @@ public class Video extends Model<Video> {
      */
     private Date doubanSyncTime;
 
+    /**
+     * 豆瓣id
+     */
+    private String doubanId;
     @Override
     protected Serializable pkVal() {
         return id;

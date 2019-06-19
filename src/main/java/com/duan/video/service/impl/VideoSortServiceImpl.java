@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,7 +129,13 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
                         continue;
                     }
                     Video videoNew = new Video();
-                    videoNew.setId(video.getId()).setScore(doubanVideoDetail.getJSONObject("rating").getBigDecimal("average")).setDoubanSyncTime(DateUtil.date()).setSynopsis(doubanVideoDetail.getString("summary"));
+                    BigDecimal doubanScore = doubanVideoDetail.getJSONObject("rating").getBigDecimal("average");
+                    videoNew.setId(video.getId()).setScore(doubanScore).setSynopsis(doubanVideoDetail.getString("summary")).setDoubanId(doubanId);
+
+                    //豆瓣分数不是0才设置同步时间
+                    if(null !=doubanScore && doubanScore.compareTo(BigDecimal.ZERO) > 0) {
+                        videoNew.setDoubanSyncTime(DateUtil.date());
+                    }
                     videoNew.updateById();
                     log.info("同步豆瓣信息成功，视频名：{}", stringObjectMap.get("title"));
                 }
