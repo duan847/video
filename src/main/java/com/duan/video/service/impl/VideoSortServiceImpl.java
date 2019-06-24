@@ -44,20 +44,20 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
      * @return
      */
     @Override
-    public boolean updateByType(Integer type, Integer page){
+    public boolean updateByType(Integer type, Integer page) {
         String url = null;
         String typeName = "";
         boolean flag = true;
-        switch (type){
-            case Constants.MOVIE_HOT :
+        switch (type) {
+            case Constants.MOVIE_HOT:
                 url = "http://api.douban.com/v2/movie/in_theaters";
                 typeName = "热映电影";
                 break;
-            case Constants.MOVIE_TOP250 :
+            case Constants.MOVIE_TOP250:
                 url = "http://api.douban.com/v2/movie/top250";
                 typeName = "top250";
                 break;
-            case Constants.MOVIE_COMING :
+            case Constants.MOVIE_COMING:
                 url = "http://api.douban.com/v2/movie/coming_soon";
                 typeName = "即将上映";
                 break;
@@ -80,9 +80,9 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
         }
         log.info("{}，开始更新", typeName);
         Integer count = 100;
-        List<Map<String,Object>> list = new ArrayList<>();
+        List<Map<String, Object>> list = new ArrayList<>();
 
-        do{
+        do {
             Integer start = (page - 1) * count;
             //获取请求连接
             Document document = null;
@@ -90,41 +90,59 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
             try {
                 document = Jsoup.parse(new URL(newUrl).openStream(), "UTF-8", newUrl);
             } catch (IOException e) {
-                log.error("{}更新失败",typeName);
+                log.error("{}更新失败", typeName);
             }
 
-            if(null == document) {
+            if (null == document) {
                 flag = false;
                 break;
             }
             JSONObject jsonObject = JSONObject.parseObject(document.text());
             JSONArray jsonArray = jsonObject.getJSONArray("subjects");
-            if(jsonArray.size() == 0){
+            if (jsonArray.size() == 0) {
                 flag = false;
             }
             jsonArray.forEach(item -> {
-                Map map = (Map)item;
+                Map map = (Map) item;
                 list.add(map);
             });
             page += 1;
-        }while (flag);
+        } while (flag);
 
         List<VideoSort> videoSortList = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             Map<String, Object> stringObjectMap = list.get(i);
-            if(null ==stringObjectMap) {
+            if (null == stringObjectMap) {
                 continue;
             }
             List<Video> list1 = videoService.list(new QueryWrapper<Video>().lambda().eq(Video::getName, stringObjectMap.get("title").toString()));
 
-            if(list1.size() > 0) {
-                Video video = list1.get(0);
+            if (list1.size() > 0) {
+                Video video = null;
+                //如果匹配到多个视频，再根据年份匹配，
+                if (list1.size() > 1) {
+                    try {
+                        for (Video item : list1) {
+                            if (item.getYear().equals(stringObjectMap.get("year").toString())) {
+                                video = item;
+                                break;
+                            }
+                        }
+                        if(video == null) {
+                            video = list1.get(0);
+                        }
+                    } catch (Exception e) {
+                        video = list1.get(0);
+                    }
+                } else {
+                    video = list1.get(0);
+                }
 
                 //如果没有同步过豆瓣的视频信息，同步豆瓣的评分、简介。并更新
-                if(null == video.getDoubanSyncTime()){
+                if (null == video.getDoubanSyncTime()) {
                     String doubanId = stringObjectMap.get("id").toString();
                     JSONObject doubanVideoDetail = videoService.getByDoubanId(doubanId);
-                    if(null == doubanVideoDetail) {
+                    if (null == doubanVideoDetail) {
                         log.error("同步豆瓣视频信息，但是没有找到，豆瓣id：{}", doubanId);
                         continue;
                     }
@@ -133,7 +151,7 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
                     videoNew.setId(video.getId()).setScore(doubanScore).setSynopsis(doubanVideoDetail.getString("summary")).setDoubanId(doubanId);
 
                     //豆瓣分数不是0才设置同步时间
-                    if(null !=doubanScore && doubanScore.compareTo(BigDecimal.ZERO) > 0) {
+                    if (null != doubanScore && doubanScore.compareTo(BigDecimal.ZERO) > 0) {
                         videoNew.setDoubanSyncTime(DateUtil.date());
                     }
                     videoNew.updateById();
@@ -143,15 +161,16 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
             }
         }
         log.info("{},更新条数：{}", typeName, videoSortList.size());
-        if(videoSortList.size() > 0) {
+        if (videoSortList.size() > 0) {
             //先删除，再新增
-            super.remove(new QueryWrapper<VideoSort>().lambda().eq(VideoSort::getType,type));
+            super.remove(new QueryWrapper<VideoSort>().lambda().eq(VideoSort::getType, type));
         }
         return super.saveBatch(videoSortList);
     }
 
     /**
      * 更新所有排序
+     *
      * @return
      */
     @Override
@@ -166,6 +185,7 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
 
     /**
      * 根据视频id删除视频排序
+     *
      * @param videoId
      * @return
      */
