@@ -299,16 +299,6 @@ public class VideoController {
     }
 
     /**
-     * 查询所有数量
-     * @return
-     */
-    @ApiOperation("查询所有数量")
-    @GetMapping("count")
-    public Map getAllCount(){
-        return videoService.getAllCount();
-    }
-
-    /**
      * 根据视频id更新视频播放地址
      * @param id
      * @return
