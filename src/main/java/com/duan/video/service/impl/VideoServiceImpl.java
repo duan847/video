@@ -452,19 +452,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     }
 
     /**
-     * 查询所有数量
-     * @return
-     */
-    @Override
-    public Map getAllCount() {
-        Map map = new HashMap(2);
-        Date now = DateUtil.date();
-        map.put("toDayAddCount", videoMapper.getAddCountByStartTimeAndEndTime(now, now));
-        map.put("toDayUpdateCount", videoMapper.getUpdateCountByStartTimeAndEndTime(now, now));
-        return map;
-    }
-
-    /**
      * 根据编号获取视频remarks
      *
      * @param no

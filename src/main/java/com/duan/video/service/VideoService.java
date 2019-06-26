@@ -110,11 +110,6 @@ public interface VideoService extends IService<Video> {
      */
     boolean updateUrlByVideo(Video video);
 
-    /**
-     * 查询所有数量
-     * @return
-     */
-    Map getAllCount();
 
     /**
      * 根据ids查询视频备注
