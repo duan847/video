@@ -53,21 +53,4 @@ public interface VideoMapper extends BaseMapper<Video> {
      */
     List<Video> selectRemarksByIds(@Param("ids") List<Long> ids);
 
-
-    /**
-     * 查看某天到某天的新增视频数
-     * @param startDate
-     * @param endDate
-     * @return
-     */
-    Integer getAddCountByStartDayAdnEndDay(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
-
-    /**
-     * 查看某天到某天的新增视频数
-     * @param startDate
-     * @param endDate
-     * @return
-     */
-    Integer getUpdateCountByStartDayAdnEndDay(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
-
 }

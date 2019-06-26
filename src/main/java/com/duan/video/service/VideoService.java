@@ -8,6 +8,7 @@ import com.duan.video.pojo.entity.Incompletion;
 import com.duan.video.pojo.entity.Video;
 import com.duan.video.pojo.vo.VideoDetailVO;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -121,4 +122,10 @@ public interface VideoService extends IService<Video> {
      * @return
      */
     List<Video> selectRemarksByIds(List<Long> videoIds);
+
+
+    /**
+     * 更新昨天所有视频数
+     */
+    void updateYesterdayAllCount();
 }

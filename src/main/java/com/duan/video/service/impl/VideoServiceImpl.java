@@ -1,9 +1,11 @@
 package com.duan.video.service.impl;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -26,12 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
-import static com.duan.video.common.Constants.BASE_URL;
-import static com.duan.video.common.Constants.JSOUP_CONNECTION_TIMEOUT;
+import static com.duan.video.common.Constants.*;
 
 /**
  * 学生service实现
@@ -65,6 +65,8 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Autowired
     private IncompletionService incompletionService;
 
+    @Autowired
+    private VideoStatisticsService videoStatisticsService;
     @Override
     public List<Video> searchByName(String name) {
         ResponseDataUtil<List<Video>> response = restTemplate.getForObject("http://www.kuqiyy.com/index.php/ajax/suggest.html?mid=1&wd=" + name, ResponseDataUtil.class);
@@ -457,8 +459,8 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     public Map getAllCount() {
         Map map = new HashMap(2);
         Date now = DateUtil.date();
-        map.put("toDayAddCount", videoMapper.getAddCountByStartDayAdnEndDay(now, now));
-        map.put("toDayUpdateCount", videoMapper.getUpdateCountByStartDayAdnEndDay(now, now));
+        map.put("toDayAddCount", videoMapper.getAddCountByStartTimeAndEndTime(now, now));
+        map.put("toDayUpdateCount", videoMapper.getUpdateCountByStartTimeAndEndTime(now, now));
         return map;
     }
 
@@ -501,4 +503,28 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         return videoMapper.selectRemarksByIds(videoIds);
     }
 
+    /**
+     * 更新昨天所有视频数
+     * 定时：每天凌晨0点执行
+     *
+     * 昨天视频总数
+     * 昨天新增视频数
+     * 昨天更新视频数
+     */
+    @Scheduled(cron = "0 0 0 * * ?")
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updateYesterdayAllCount(){
+        DateTime date = DateUtil.date();
+        DateTime beginOfDay = DateUtil.beginOfDay(date);
+        DateTime endOfDay = DateUtil.endOfDay(date);
+        int count =  super.count();
+        int addCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime,beginOfDay,endOfDay));
+        int updateCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getUpdateTime,beginOfDay,endOfDay));
+        VideoStatistics videoStatisticsCount = new VideoStatistics().setCount(count).setType(VIDEO_COUNT).setTime(beginOfDay);
+        VideoStatistics videoStatisticsAddCount = new VideoStatistics().setCount(addCount).setType(VIDEO_COUNT_TODAY_ADD).setTime(beginOfDay);
+        VideoStatistics videoStatisticsUpdateCount = new VideoStatistics().setCount(updateCount).setType(VIDEO_COUNT_TODAY_UPDATE).setTime(beginOfDay);
+        List<VideoStatistics> videoStatisticsList = Arrays.asList(videoStatisticsCount, videoStatisticsAddCount, videoStatisticsUpdateCount);
+        videoStatisticsService.saveBatch(videoStatisticsList);
+    }
 }

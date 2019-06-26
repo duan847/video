@@ -1,7 +1,9 @@
 package com.duan.video.controller;
 
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ArrayUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -318,5 +320,13 @@ public class VideoController {
             return false;
         }
         return videoService.updateUrlByVideo(videoList.get(0));
+    }
+
+    @GetMapping("test")
+    public Integer test(){
+        DateTime date = DateUtil.date();
+        DateTime beginOfDay = DateUtil.beginOfDay(date);
+        DateTime endOfDay = DateUtil.endOfDay(date);
+        return videoService.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime,beginOfDay,endOfDay));
     }
 }

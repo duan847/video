@@ -107,4 +107,18 @@ public class Constants {
      * 待完结视频更新完成的消息
      */
     public static final String INCOMPLETION_UPDATE_MSG = "待完结视频更新：编号：{}，视频名：{}，更新前remarks：{}，更新后remarks：{}";
+
+
+    /**
+     * 视频当日新增数
+     */
+    public static final Integer VIDEO_COUNT_TODAY_ADD = 134;
+    /**
+     * 视频当日更新数
+     */
+    public static final Integer VIDEO_COUNT_TODAY_UPDATE = 135;
+    /**
+     * 视频当日总数
+     */
+    public static final Integer VIDEO_COUNT = 136;
 }
