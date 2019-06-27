@@ -7,7 +7,7 @@ import java.util.Map;
  */
 public class Constants {
 
-    public static String BASE_URL = "http://www.kuqiyy.com/";
+    public static String BASE_URL = "http://www.80ys.net//";
 
     /**
      * 主演

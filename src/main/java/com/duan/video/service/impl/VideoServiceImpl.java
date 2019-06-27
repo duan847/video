@@ -229,7 +229,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             Element boxs = document.select("div[class*=fed-drop-tops]").get(0);
             Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
             Elements lines = boxs.select("ul[class=fed-part-rows] li");
-            Elements dizhi = document.select("div[class=fed-drop-boxs fed-drop-btms fed-matp-v] div");
+            Elements dizhi = document.select("div[class=fed-drop-boxs fed-drop-tops fed-matp-v] div");
 
             List<RouteUrl> routeUrlList = new ArrayList<>();
             List<DownUrl> downUrlList = new ArrayList<>();
@@ -342,14 +342,14 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateAllInfoById(Long id) {
-        Video video = videoMapper.selectOne(new QueryWrapper<Video>().lambda().eq(Video::getId, id));
-        if (null != video) {
-            Integer no = video.getNo();
-            crawErrorService.deleteByVideoNo(no);
-            deleteAllInfoById(id);
-            crawByNo(no, video.getId());
-            return true;
-        }
+//        Video video = videoMapper.selectOne(new QueryWrapper<Video>().lambda().eq(Video::getId, id));
+//        if (null != video) {
+//            Integer no = video.getNo();
+//            crawErrorService.deleteByVideoNo(no);
+//            deleteAllInfoById(id);
+//            crawByNo(no, video.getId());
+//            return true;
+//        }
         return false;
     }
 
@@ -435,19 +435,20 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
      * @param video
      * @return
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateUrlByVideo(Video video){
-        String thisVideoRemarks = video.getRemarks();
-        Integer no = video.getNo();
-        String newRemarks = getRemarksByNo(no);
-        //如果现在视频的remarks和获取到的remarks不一样，更新视频
-        if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
-            Long videoId = video.getId();
-            incompletionService.deleteByVideoId(videoId);
-            this.updateAllInfoById(videoId);
-            log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
-            return true;
-        }
+//        String thisVideoRemarks = video.getRemarks();
+//        Integer no = video.getNo();
+//        String newRemarks = getRemarksByNo(no);
+//        //如果现在视频的remarks和获取到的remarks不一样，更新视频
+//        if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
+//            Long videoId = video.getId();
+//            incompletionService.deleteByVideoId(videoId);
+//            this.updateAllInfoById(videoId);
+//            log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
+//            return true;
+//        }
         return false;
     }
 
@@ -502,12 +503,12 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateYesterdayAllCount(){
-        DateTime date = DateUtil.date();
+        DateTime date = DateUtil.yesterday();
         DateTime beginOfDay = DateUtil.beginOfDay(date);
         DateTime endOfDay = DateUtil.endOfDay(date);
-        int count =  super.count();
-        int addCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime,beginOfDay,endOfDay));
-        int updateCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getUpdateTime,beginOfDay,endOfDay));
+        int count =  super.count(new LambdaQueryWrapper<Video>().lt(Video::getType,1000));
+        int addCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime,beginOfDay,endOfDay).lt(Video::getType,1000));
+        int updateCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getUpdateTime,beginOfDay,endOfDay).lt(Video::getType,1000));
         VideoStatistics videoStatisticsCount = new VideoStatistics().setCount(count).setType(VIDEO_COUNT).setTime(beginOfDay);
         VideoStatistics videoStatisticsAddCount = new VideoStatistics().setCount(addCount).setType(VIDEO_COUNT_TODAY_ADD).setTime(beginOfDay);
         VideoStatistics videoStatisticsUpdateCount = new VideoStatistics().setCount(updateCount).setType(VIDEO_COUNT_TODAY_UPDATE).setTime(beginOfDay);

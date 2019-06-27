@@ -41,7 +41,7 @@ public class VideoServiceImplTest {
 
     @Test
     public void start() {
-        videoService.start(80617,80617);
+        videoService.start(1,1);
     }
 
     @Test
