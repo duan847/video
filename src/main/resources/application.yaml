@@ -39,7 +39,7 @@ spring:
 
 ## 开启定时任务
 scheduling:
-  enabled: true
+  enabled: false
 
 ## 日志输出，不配置不会输出sql日志
 logging:
