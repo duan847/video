@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.duan.video.common.Constants;
@@ -79,7 +80,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
      * @return
      */
     @Override
-    @Transactional
     public String start(Integer startNo, Integer endNo) {
         if (null == startNo) {
             startNo = 1;
@@ -152,7 +152,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
      */
     @Override
     @Async
-    @Transactional(rollbackFor = Exception.class)
     public void crawByNo(Integer no, Long videoId) {
         try {
             String startUrl = BASE_URL + "detail/" + no + ".html";
@@ -214,25 +213,24 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                     aTag.forEach(item -> directorList.add(new Person().setName(item.text()).setType(Constants.DIRECTOR)));
                 }
             }
+            if(videoId==null){
+                videoId = IdWorker.getId();
+            }
 
-            //新增视频
-            video.setId(videoId).insertOrUpdate();
-            final long newVideoId = video.getId();
-            //根据备注新增待完结视频
-            saveIncompletion(remarks, newVideoId);
+            final long newVideoId = videoId;
 
             //新增主演&导演
             staringList.addAll(directorList);
             staringList.forEach(item -> item.setVideoId(newVideoId));
-            personService.saveBatch(staringList);
 
-            Element boxs = document.select("div[class*=fed-drop-tops]").get(0);
+            Element boxs = document.select("div[class*=fed-drop-boxs]").get(0);
             Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
             Elements lines = boxs.select("ul[class=fed-part-rows] li");
             Elements dizhi = document.select("div[class=fed-drop-boxs fed-drop-tops fed-matp-v] div");
 
             List<RouteUrl> routeUrlList = new ArrayList<>();
             List<DownUrl> downUrlList = new ArrayList<>();
+            List<VideoRoute> videoRouteList = new ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
 
 
@@ -241,7 +239,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
                 //新增视频线路
                 VideoRoute videoRoute = new VideoRoute().setLine(lineId).setVideoId(newVideoId);
-                videoRouteService.save(videoRoute);
+                videoRouteList.add(videoRoute);
 
                 for (Element element : dizhi.get(i).select("ul[class=fed-part-rows] li")) {
 
@@ -266,14 +264,32 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                     downUrl.setName(element.select("a").html()).setUrl(element.select("a").attr("href")).setVideoId(newVideoId);
                     downUrlList.add(downUrl);
                 }
-                if (downUrlList.size() > 0) {
-                    downUrlService.saveBatch(downUrlList);
-                }
+
+            }
+            //新增视频
+            video.setId(videoId).insertOrUpdate();
+            //根据备注新增待完结视频
+            saveIncompletion(remarks, newVideoId);
+
+            //新增视频播放线路
+            if(videoRouteList.size()>0 ){
+                videoRouteService.saveBatch(videoRouteList);
+            }
+
+            //新增演员
+            if(staringList.size()>0 ){
+                personService.saveBatch(staringList);
             }
 
             //新增视频播放地址
-            routeUrlService.saveBatch(routeUrlList);
+            if (routeUrlList.size() > 0) {
+                routeUrlService.saveBatch(routeUrlList);
+            }
 
+            //新增视频下载
+            if (downUrlList.size() > 0) {
+                downUrlService.saveBatch(downUrlList);
+            }
         } catch (Exception e) {
             log.error("异常视频编号：{}", no);
             log.error("出现异常：", e);
