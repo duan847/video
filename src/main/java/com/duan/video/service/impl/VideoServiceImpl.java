@@ -358,14 +358,14 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateAllInfoById(Long id) {
-//        Video video = videoMapper.selectOne(new QueryWrapper<Video>().lambda().eq(Video::getId, id));
-//        if (null != video) {
-//            Integer no = video.getNo();
-//            crawErrorService.deleteByVideoNo(no);
-//            deleteAllInfoById(id);
-//            crawByNo(no, video.getId());
-//            return true;
-//        }
+        Video video = videoMapper.selectOne(new QueryWrapper<Video>().lambda().eq(Video::getId, id));
+        if (null != video) {
+            Integer no = video.getNo();
+            crawErrorService.deleteByVideoNo(no);
+            deleteAllInfoById(id);
+            crawByNo(no, video.getId());
+            return true;
+        }
         return false;
     }
 
@@ -454,17 +454,17 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateUrlByVideo(Video video){
-//        String thisVideoRemarks = video.getRemarks();
-//        Integer no = video.getNo();
-//        String newRemarks = getRemarksByNo(no);
-//        //如果现在视频的remarks和获取到的remarks不一样，更新视频
-//        if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
-//            Long videoId = video.getId();
-//            incompletionService.deleteByVideoId(videoId);
-//            this.updateAllInfoById(videoId);
-//            log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
-//            return true;
-//        }
+        String thisVideoRemarks = video.getRemarks();
+        Integer no = video.getNo();
+        String newRemarks = getRemarksByNo(no);
+        //如果现在视频的remarks和获取到的remarks不一样，更新视频
+        if (StrUtil.isNotEmpty(thisVideoRemarks) && newRemarks != null && !StrUtil.equals(thisVideoRemarks, newRemarks)) {
+            Long videoId = video.getId();
+            incompletionService.deleteByVideoId(videoId);
+            this.updateAllInfoById(videoId);
+            log.info(Constants.INCOMPLETION_UPDATE_MSG, no, video.getName(), thisVideoRemarks, newRemarks);
+            return true;
+        }
         return false;
     }
 
