@@ -290,7 +290,7 @@ public class VideoController {
     @ApiOperation("根据爬取异常的内容重新爬取视频")
     @GetMapping("error/content/{content}")
     public boolean updateByCrawError(@PathVariable String content) {
-        List<CrawError> crawErrorList = crawErrorService.list(new QueryWrapper<CrawError>().lambda().eq(CrawError::getContent, content));
+        List<CrawError> crawErrorList = crawErrorService.list(new QueryWrapper<CrawError>().lambda().like(CrawError::getContent, content));
         crawErrorList.forEach(item -> {
             videoService.crawByNo(item.getVideoNo(), null);
             crawErrorService.removeById(item.getId());
