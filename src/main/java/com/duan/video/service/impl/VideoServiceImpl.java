@@ -153,6 +153,10 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Override
     @Async
     public void crawByNo(Integer no, Long videoId) {
+        boolean isUpdate = false;
+        if(videoId!=null ) {
+            isUpdate = true;
+        }
         try {
             String startUrl = BASE_URL + "detail/" + no + ".html";
             //获取请求连接
@@ -271,6 +275,11 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             //根据备注新增待完结视频
             saveIncompletion(remarks, newVideoId);
 
+            //如果是更新，先把原先数据清空
+            if(isUpdate) {
+                crawErrorService.deleteByVideoNo(no);
+                deleteAllInfoById(videoId);
+            }
             //新增视频播放线路
             if(videoRouteList.size()>0 ){
                 videoRouteService.saveBatch(videoRouteList);
@@ -361,8 +370,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         Video video = videoMapper.selectOne(new QueryWrapper<Video>().lambda().eq(Video::getId, id));
         if (null != video) {
             Integer no = video.getNo();
-            crawErrorService.deleteByVideoNo(no);
-            deleteAllInfoById(id);
             crawByNo(no, video.getId());
             return true;
         }
