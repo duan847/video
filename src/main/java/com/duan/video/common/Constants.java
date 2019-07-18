@@ -7,8 +7,9 @@ import java.util.Map;
  */
 public class Constants {
 
-    public static String BASE_URL = "http://www.80ys.net//";
+    public static String BASE_URL = "http://www.kuqiyy.com/";
 
+    public static String DI_ZHI = "div[class=fed-drop-boxs fed-drop-btms fed-matp-v] div";
     /**
      * 主演
      */

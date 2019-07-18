@@ -230,8 +230,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             Element boxs = document.select("div[class*=fed-drop-boxs]").get(0);
             Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
             Elements lines = boxs.select("ul[class=fed-part-rows] li");
-            Elements dizhi = document.select("div[class=fed-drop-boxs fed-drop-tops fed-matp-v] div");
-
+            Elements dizhi = document.select(DI_ZHI);
             List<RouteUrl> routeUrlList = new ArrayList<>();
             List<DownUrl> downUrlList = new ArrayList<>();
             List<VideoRoute> videoRouteList = new ArrayList<>();
@@ -401,7 +400,6 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
      */
     @Override
     @Scheduled(cron = "0 0 0/2 * * ?")
-    @Transactional(rollbackFor = Exception.class)
     public synchronized boolean crawNow() {
         Integer size = 10;
         log.info(Constants.CRAW_NOW_SRART_MSG, DateUtil.now());
