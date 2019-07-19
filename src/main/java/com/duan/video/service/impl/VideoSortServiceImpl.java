@@ -115,7 +115,7 @@ public class VideoSortServiceImpl extends ServiceImpl<VideoSortMapper, VideoSort
             if (null == stringObjectMap) {
                 continue;
             }
-            List<Video> list1 = videoService.list(new QueryWrapper<Video>().lambda().eq(Video::getName, stringObjectMap.get("title").toString()));
+            List<Video> list1 = videoService.list(new QueryWrapper<Video>().lambda().eq(Video::getName, stringObjectMap.get("title").toString()+stringObjectMap.get("year").toString()).or().eq(Video::getName, stringObjectMap.get("title").toString()));
 
             if (list1.size() > 0) {
                 Video video = null;
