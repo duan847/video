@@ -301,6 +301,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         } catch (Exception e) {
             log.error("异常视频编号：{}", no);
             log.error("出现异常：", e);
+            crawErrorService.deleteByVideoNo(no);
             crawErrorService.save(new CrawError().setContent(e.toString()).setCreateTime(new Date()).setVideoNo(no));
         }
     }
