@@ -269,35 +269,35 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                 }
 
             }
-            //新增视频
-            video.setId(videoId).insertOrUpdate();
-            //根据备注新增待完结视频
-            saveIncompletion(remarks, newVideoId);
-
-            //如果是更新，先把原先数据清空
-            if(isUpdate) {
-                crawErrorService.deleteByVideoNo(no);
-                deleteAllInfoById(videoId);
-            }
-            //新增视频播放线路
-            if(videoRouteList.size()>0 ){
-                videoRouteService.saveBatch(videoRouteList);
-            }
-
-            //新增演员
-            if(staringList.size()>0 ){
-                personService.saveBatch(staringList);
-            }
-
-            //新增视频播放地址
-            if (routeUrlList.size() > 0) {
-                routeUrlService.saveBatch(routeUrlList);
-            }
-
-            //新增视频下载
-            if (downUrlList.size() > 0) {
-                downUrlService.saveBatch(downUrlList);
-            }
+//            //新增视频
+//            video.setId(videoId).insertOrUpdate();
+//            //根据备注新增待完结视频
+//            saveIncompletion(remarks, newVideoId);
+//
+//            //如果是更新，先把原先数据清空
+//            if(isUpdate) {
+//                crawErrorService.deleteByVideoNo(no);
+//                deleteAllInfoById(videoId);
+//            }
+//            //新增视频播放线路
+//            if(videoRouteList.size()>0 ){
+//                videoRouteService.saveBatch(videoRouteList);
+//            }
+//
+//            //新增演员
+//            if(staringList.size()>0 ){
+//                personService.saveBatch(staringList);
+//            }
+//
+//            //新增视频播放地址
+//            if (routeUrlList.size() > 0) {
+//                routeUrlService.saveBatch(routeUrlList);
+//            }
+//
+//            //新增视频下载
+//            if (downUrlList.size() > 0) {
+//                downUrlService.saveBatch(downUrlList);
+//            }
         } catch (Exception e) {
             log.error("异常视频编号：{}", no);
             log.error("出现异常：", e);
