@@ -303,7 +303,11 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             log.error("异常视频编号：{}", no);
             log.error("出现异常：", e);
             crawErrorService.deleteByVideoNo(no);
-            crawErrorService.save(new CrawError().setContent(e.toString()).setCreateTime(new Date()).setVideoNo(no));
+            try {
+                crawErrorService.save(new CrawError().setContent(e.toString()).setCreateTime(new Date()).setVideoNo(no));
+            } catch (Exception e1) {
+                log.error("保存异常视频失败");
+            }
         }
     }
 
