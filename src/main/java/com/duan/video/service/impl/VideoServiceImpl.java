@@ -29,8 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 import static com.duan.video.common.Constants.*;
 
@@ -68,6 +70,7 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Autowired
     private VideoStatisticsService videoStatisticsService;
+
     @Override
     public List<Video> searchByName(String name) {
         ResponseDataUtil<List<Video>> response = restTemplate.getForObject("http://www.kuqiyy.com/index.php/ajax/suggest.html?mid=1&wd=" + name, ResponseDataUtil.class);
@@ -145,6 +148,10 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
         return videoMapper.getDetailById(id);
     }
 
+    public static void main(String[] args) {
+        new VideoServiceImpl().crawByNo(1000, null);
+    }
+
     /**
      * 根据视频编号多线程爬取视频，并保存到数据库
      *
@@ -154,35 +161,36 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Async
     public void crawByNo(Integer no, Long videoId) {
         boolean isUpdate = false;
-        if(videoId!=null ) {
+        if (videoId != null) {
             isUpdate = true;
         }
         try {
-            String startUrl = BASE_URL + "detail/" + no + ".html";
+            String startUrl = BASE_URL + "movie/" + no;
             //获取请求连接
             Document document = Jsoup.connect(startUrl).timeout(JSOUP_CONNECTION_TIMEOUT).get();
             //请求头设置，特别是cookie设置
             log.info("开始爬取：{}", startUrl);
-            Elements detail = document.select("dl[class=fed-deta-info fed-margin fed-part-rows fed-part-over]");
+            Elements detail = document.select("ul[id=cpage]");
             if (null == detail || detail.html().trim().equals("")) {
                 crawErrorService.deleteByVideoNo(no);
                 crawErrorService.save(new CrawError().setContent("无资源").setCreateTime(new Date()).setVideoNo(no));
                 return;
             }
-            String cover = detail.select("dt a").attr("data-original");
-            String score = detail.select("dt span[class*=fed-list-score]").text();
-            score = (score == null || score.trim().equals("")) ? "0" : score;
-            String remarks = detail.select("dt span[class*=fed-list-remarks]").text();
-            String name = detail.select("dd h1").text();
-            Elements zhuyan = detail.select("dd ul li");
+            String cover = document.select("#minfo > div.img > img").attr("src");
+            String name = document.select("div[id=minfo] h1").text();
+            Elements info = document.select("div[id=minfo] div[class=info]");
+
+            Elements info1 = info.select(" div[class=clearfix]").eq(0).select("span");
+            Elements info2 = info.select("div").eq(2).select("span");
 
             Video video = new Video();
-            video.setNo(no).setCover(cover).setScore(new BigDecimal(score)).setRemarks(remarks).setName(name);
+
+            video.setNo(no).setCover(cover).setName(name);
 
             List<Person> staringList = new ArrayList<>();
             List<Person> directorList = new ArrayList<>();
             //电影介绍
-            for (Element element : zhuyan) {
+            for (Element element : info1) {
                 //为空返回
                 if (null == element.text() || "".equals(element.text().trim())) {
                     continue;
@@ -190,38 +198,41 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
                 if (videoId != null) {
                     video.setUpdateTime(DateUtil.date());
                 }
-                String spanText = element.select("span").text();
+                final Elements span = element.select("span");
+                if (span.size() != 2) {
+                    continue;
+                }
+
+                String spanText = span.get(1).text();
+                String spanContent = span.get(0).text().replace(spanText, "");
                 Elements aTag = element.select("a");
                 String aText = element.select("a").text();
-                if ("简介：".equals(spanText)) {
-                    if (element.text().split("：").length > 1) {
-                        video.setSynopsis(element.text().split("：")[1]);
-                    }
-                } else if ("更新：".equals(spanText)) {
-                    if (element.text().split("：").length > 1) {
-                        video.setUpdateTimeTmp(element.text().split("：")[1]);
-                        if (videoId == null) {
-                            video.setCreateTime(DateUtil.date());
-                        }
-                    }
-                } else if ("年份：".equals(spanText)) {
-                    video.setYear(aText);
-                } else if ("地区：".equals(spanText)) {
-                    video.setAreaName(aText);
-                    video.setArea(Constants.dictMap.get(Constants.AREA_PID_KEY + aText));
-                } else if ("分类：".equals(spanText)) {
+                if ("又名：".equals(spanText)) {
+                    video.setAlias(spanContent.trim());
+                } else if ("演员：".equals(spanText)) {
+                   video.setSynopsis(aText);
+                    aTag.forEach(item -> staringList.add(new Person().setName(item.text()).setType(STARING)));
+                } else if ("类型：".equals(spanText)) {
                     video.setTypeName(aText);
-                    video.setType(Constants.dictMap.get(Constants.VIDEO_TYPE_PID_KEY + aText));
-                } else if ("主演：".equals(spanText)) {
-                    aTag.forEach(item -> staringList.add(new Person().setName(item.text()).setType(Constants.STARING)));
+//                    video.setType(Constants.dictMap.get(Constants.VIDEO_TYPE_PID_KEY + aText));
+                } else if ("地区：".equals(spanText)) {
+                    video.setYear(spanContent);
+                } else if ("语言：".equals(spanText)) {
+                    video.setLanguage(spanContent);
                 } else if ("导演：".equals(spanText)) {
                     aTag.forEach(item -> directorList.add(new Person().setName(item.text()).setType(Constants.DIRECTOR)));
+                } else if ("上映日期：".equals(spanText)) {
+                    video.setYear(spanContent);
+                } else if ("片长：".equals(spanText)) {
+                    video.setFilmLength(spanContent);
                 }
             }
-            if(videoId==null){
+            if (video != null) {
+                return;
+            }
+            if (videoId == null) {
                 videoId = IdWorker.getId();
             }
-
             final long newVideoId = videoId;
 
             //新增主演&导演
@@ -231,31 +242,36 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             Element boxs = document.select("div[class*=fed-drop-boxs]").get(0);
             Elements downElements = document.select("dd[class*=fed-part-rows]").select("a[class*=fed-deta-down]");
             Elements lines = boxs.select("ul[class=fed-part-rows] li");
-            Elements dizhi = document.select(DI_ZHI);
+            Elements dizhi = document.select("ul[id=cpage] li");
             List<RouteUrl> routeUrlList = new ArrayList<>();
             List<DownUrl> downUrlList = new ArrayList<>();
             List<VideoRoute> videoRouteList = new ArrayList<>();
-            for (int i = 0; i < lines.size(); i++) {
+            List<String> tmpRouteUrls = new ArrayList<>();
+            List<String> tmpDownUrls = new ArrayList<>();
 
+            for (int i = 0; i < dizhi.size(); i++) {
 
-                String href = lines.get(i).select("a").attr("href");
-                Integer lineId = Integer.parseInt(href.substring(href.indexOf("-") + 1, href.lastIndexOf("-")));
+                final Element element1 = dizhi.get(i);
+                final String dizhiId = element1.attr("id");
 
-                //新增视频线路
-                VideoRoute videoRoute = new VideoRoute().setLine(lineId).setVideoId(newVideoId);
-                videoRouteList.add(videoRoute);
-
-                for (Element element : dizhi.get(i).select("ul[class=fed-part-rows] li")) {
-
-                    Document videoDocument = Jsoup.connect(BASE_URL + element.select("a").attr("href")).get();
-                    Elements url = videoDocument.select("iframe[data-play]");
-
-                    //新增视频不同线路的url
-                    RouteUrl routeUrl = new RouteUrl();
-                    routeUrl.setLine(lineId).setName(element.select("a").html()).setUrl(url.attr("data-play")).setVideoId(newVideoId);
-                    routeUrlList.add(routeUrl);
+                // 下载地址
+                if(dizhiId.indexOf("cpdl") == 0) {
+                    tmpDownUrls.add(dizhiId.replace("cpdl",""));
+                }
+                // 播放地址
+                else if(dizhiId.indexOf("cpol") == 0) {
+                    tmpRouteUrls.add(dizhiId.replace("cpol",""));
                 }
             }
+
+            tmpRouteUrls.forEach(item->{
+                Document routeUrlDocument =  Jsoup.connect(BASE_URL +"movie/" + no + "/play/" + item + "-2").get();
+                final Elements li_a = routeUrlDocument.select("li a");
+                li_a.forEach(liAHtml -> {
+                    final String href = liAHtml.attr("href");
+                    Jsoup.connect(BASE_URL + "");
+                });
+            });
             //视频下载地址
             if (null != downElements && downElements.size() > 0) {
                 String downHref = downElements.get(0).attr("href");
@@ -273,20 +289,20 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             //新增视频
             video.setId(videoId).insertOrUpdate();
             //根据备注新增待完结视频
-            saveIncompletion(remarks, newVideoId);
+//            saveIncompletion(remarks, newVideoId);
 
             //如果是更新，先把原先数据清空
-            if(isUpdate) {
+            if (isUpdate) {
                 crawErrorService.deleteByVideoNo(no);
                 deleteAllInfoById(videoId);
             }
             //新增视频播放线路
-            if(videoRouteList.size()>0 ){
+            if (videoRouteList.size() > 0) {
                 videoRouteService.saveBatch(videoRouteList);
             }
 
             //新增演员
-            if(staringList.size()>0 ){
+            if (staringList.size() > 0) {
                 personService.saveBatch(staringList);
             }
 
@@ -459,12 +475,13 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     /**
      * 根据视频信息更新视频播放地址
+     *
      * @param video
      * @return
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean updateUrlByVideo(Video video){
+    public boolean updateUrlByVideo(Video video) {
         String thisVideoRemarks = video.getRemarks();
         Integer no = video.getNo();
         String newRemarks = getRemarksByNo(no);
@@ -510,18 +527,19 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     /**
      * 根据ids查询视频备注
+     *
      * @param videoIds
      * @return
      */
     @Override
-    public List<Video> selectRemarksByIds(List<Long> videoIds){
+    public List<Video> selectRemarksByIds(List<Long> videoIds) {
         return videoMapper.selectRemarksByIds(videoIds);
     }
 
     /**
      * 更新昨天所有视频数
      * 定时：每天凌晨0点执行
-     *
+     * <p>
      * 昨天视频总数
      * 昨天新增视频数
      * 昨天更新视频数
@@ -529,13 +547,13 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void updateYesterdayAllCount(){
+    public void updateYesterdayAllCount() {
         DateTime date = DateUtil.yesterday();
         DateTime beginOfDay = DateUtil.beginOfDay(date);
         DateTime endOfDay = DateUtil.endOfDay(date);
-        int count =  super.count(new LambdaQueryWrapper<Video>().lt(Video::getType,1000));
-        int addCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime,beginOfDay,endOfDay).lt(Video::getType,1000));
-        int updateCount =  super.count(new LambdaQueryWrapper<Video>().between(Video::getUpdateTime,beginOfDay,endOfDay).lt(Video::getType,1000));
+        int count = super.count(new LambdaQueryWrapper<Video>().lt(Video::getType, 1000));
+        int addCount = super.count(new LambdaQueryWrapper<Video>().between(Video::getCreateTime, beginOfDay, endOfDay).lt(Video::getType, 1000));
+        int updateCount = super.count(new LambdaQueryWrapper<Video>().between(Video::getUpdateTime, beginOfDay, endOfDay).lt(Video::getType, 1000));
         VideoStatistics videoStatisticsCount = new VideoStatistics().setCount(count).setType(VIDEO_COUNT).setTime(beginOfDay);
         VideoStatistics videoStatisticsAddCount = new VideoStatistics().setCount(addCount).setType(VIDEO_COUNT_TODAY_ADD).setTime(beginOfDay);
         VideoStatistics videoStatisticsUpdateCount = new VideoStatistics().setCount(updateCount).setType(VIDEO_COUNT_TODAY_UPDATE).setTime(beginOfDay);

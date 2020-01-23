@@ -95,7 +95,7 @@ public class Video extends Model<Video> {
      * 片长
      */
     @ApiModelProperty("片长")
-    private Double filmLength;
+    private String filmLength;
 
     /**
      * 评分
@@ -154,6 +154,11 @@ public class Video extends Model<Video> {
      * 豆瓣id
      */
     private String doubanId;
+
+    /**
+     * 语言
+     */
+    private String language;
     @Override
     protected Serializable pkVal() {
         return id;

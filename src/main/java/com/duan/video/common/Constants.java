@@ -7,7 +7,7 @@ import java.util.Map;
  */
 public class Constants {
 
-    public static String BASE_URL = "http://www.kuqiyy.com/";
+    public static String BASE_URL = "http://www.8080s.net/";
 
     public static String DI_ZHI = "div[class=fed-drop-boxs fed-drop-btms fed-matp-v] div";
     /**
